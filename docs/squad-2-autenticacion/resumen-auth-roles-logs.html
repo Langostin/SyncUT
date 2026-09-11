@@ -1,0 +1,855 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>SyncUT — Módulo de Autenticación, Roles y Auditoría</title>
+<style>
+  @page { size: A4; margin: 16mm 14mm 16mm 14mm; }
+  * { box-sizing: border-box; }
+  body {
+    font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+    font-size: 10pt; line-height: 1.5; color: #1c1b1f; margin: 0;
+  }
+  h1, h2, h3, h4 { font-weight: 800; letter-spacing: -0.02em; margin: 0; }
+  code, pre { font-family: "DejaVu Sans Mono", Menlo, Consolas, monospace; }
+
+  /* ---------- Portada ---------- */
+  .cover {
+    height: 245mm; display: flex; flex-direction: column; justify-content: center;
+    page-break-after: always; padding: 0 6mm;
+  }
+  .cover .mark {
+    width: 46px; height: 46px; border-radius: 10px; background: #4c1d95;
+    color: #fff; display: flex; align-items: center; justify-content: center;
+    font-size: 22pt; font-weight: 900; margin-bottom: 18mm;
+  }
+  .cover .kicker { font-size: 9pt; letter-spacing: 0.22em; text-transform: uppercase; color: #6d28d9; font-weight: 700; }
+  .cover h1 { font-size: 30pt; line-height: 1.1; margin: 6mm 0 4mm; }
+  .cover .sub { font-size: 12pt; color: #49454f; max-width: 130mm; }
+  .cover .meta { margin-top: 22mm; border-top: 2px solid #4c1d95; padding-top: 5mm;
+                 display: grid; grid-template-columns: 1fr 1fr; gap: 4mm 8mm; font-size: 9pt; }
+  .cover .meta b { display: block; font-size: 7.5pt; text-transform: uppercase;
+                   letter-spacing: 0.12em; color: #79747e; font-weight: 700; margin-bottom: 1mm; }
+
+  /* ---------- Secciones ---------- */
+  section { page-break-inside: auto; }
+  h2 {
+    font-size: 15pt; color: #2e1065; margin: 9mm 0 3mm;
+    padding-bottom: 2mm; border-bottom: 2px solid #ddd6fe;
+    page-break-after: avoid;
+  }
+  h2 .n { color: #a78bfa; margin-right: 3mm; }
+  h3 { font-size: 11pt; margin: 5mm 0 2mm; color: #3b0764; page-break-after: avoid; }
+  h4 { font-size: 9.5pt; margin: 4mm 0 1.5mm; color: #49454f; page-break-after: avoid; }
+  p { margin: 0 0 2.5mm; }
+  ul, ol { margin: 0 0 3mm; padding-left: 5mm; }
+  li { margin-bottom: 1.2mm; }
+
+  .lead { font-size: 10.5pt; color: #49454f; }
+
+  /* ---------- Componentes ---------- */
+  table { width: 100%; border-collapse: collapse; margin: 2mm 0 4mm; font-size: 8.5pt; }
+  th { background: #f5f3ff; color: #2e1065; text-align: left; font-weight: 700;
+       padding: 2mm 2.5mm; border-bottom: 1.5px solid #c4b5fd; }
+  td { padding: 2mm 2.5mm; border-bottom: 1px solid #e7e0ec; vertical-align: top; }
+  tr { page-break-inside: avoid; }
+  td code, th code, li code, p code {
+    background: #f4f1f8; padding: 0.4mm 1.2mm; border-radius: 2px; font-size: 0.88em; color: #4c1d95;
+  }
+
+  pre {
+    background: #1c1b2e; color: #e9e4f5; padding: 3mm 3.5mm; border-radius: 3px;
+    font-size: 7.8pt; line-height: 1.45; overflow: hidden; white-space: pre-wrap;
+    margin: 2mm 0 4mm; page-break-inside: avoid;
+  }
+  pre .c { color: #9b93b5; }
+  pre .k { color: #c4b5fd; }
+  pre .s { color: #a5e0a5; }
+
+  .box { border-left: 3px solid #7c3aed; background: #faf8ff; padding: 3mm 4mm;
+         margin: 3mm 0; page-break-inside: avoid; }
+  .box.warn { border-left-color: #d97706; background: #fffaf0; }
+  .box.crit { border-left-color: #b3261e; background: #fff5f4; }
+  .box p:last-child { margin-bottom: 0; }
+  .box .t { font-weight: 800; font-size: 9pt; text-transform: uppercase;
+            letter-spacing: 0.08em; margin-bottom: 1.5mm; color: #4c1d95; }
+  .box.warn .t { color: #92400e; }
+  .box.crit .t { color: #8c1d18; }
+
+  .pill { display: inline-block; font-size: 7pt; font-weight: 800; padding: 0.6mm 2mm;
+          border-radius: 8px; text-transform: uppercase; letter-spacing: 0.06em; white-space: nowrap; }
+  .ok   { background: #dcfce7; color: #14532d; }
+  .part { background: #fef3c7; color: #78350f; }
+  .no   { background: #fee2e2; color: #7f1d1d; }
+
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 4mm; }
+  .card { border: 1px solid #e7e0ec; border-radius: 4px; padding: 3mm 3.5mm; page-break-inside: avoid; }
+  .card .t { font-weight: 800; font-size: 9.5pt; color: #2e1065; margin-bottom: 1.5mm; }
+
+  .path { font-family: "DejaVu Sans Mono", monospace; font-size: 8pt; color: #6d28d9; }
+
+  .steps { counter-reset: s; list-style: none; padding-left: 0; }
+  .steps li { counter-increment: s; position: relative; padding-left: 9mm; margin-bottom: 2.5mm; }
+  .steps li::before {
+    content: counter(s); position: absolute; left: 0; top: 0.3mm;
+    width: 6mm; height: 6mm; border-radius: 50%; background: #ede9fe; color: #4c1d95;
+    font-size: 8pt; font-weight: 800; display: flex; align-items: center; justify-content: center;
+  }
+
+  .pagebreak { page-break-before: always; }
+  .avoid { page-break-inside: avoid; }
+
+  .script-row { display: grid; grid-template-columns: 20mm 1fr; gap: 3mm;
+                border-bottom: 1px solid #e7e0ec; padding: 2.5mm 0; page-break-inside: avoid; }
+  .script-row .time { font-weight: 800; color: #6d28d9; font-size: 8.5pt; }
+  .script-row .what { font-size: 9pt; }
+  .script-row .what b { display: block; color: #2e1065; margin-bottom: 0.8mm; }
+  .say { font-style: italic; color: #49454f; border-left: 2px solid #ddd6fe; padding-left: 3mm; margin-top: 1.5mm; font-size: 8.5pt; }
+
+  .qa { page-break-inside: avoid; margin-bottom: 3.5mm; }
+  .qa .q { font-weight: 800; color: #2e1065; font-size: 9.5pt; margin-bottom: 1mm; }
+  .qa .a { font-size: 9pt; }
+
+  .ascii { font-family: "DejaVu Sans Mono", monospace; font-size: 7.4pt; line-height: 1.35;
+           background: #faf8ff; border: 1px solid #e7e0ec; border-radius: 3px;
+           padding: 3mm; white-space: pre; page-break-inside: avoid; margin: 2mm 0 4mm; }
+</style>
+</head>
+<body>
+
+<!-- ============ PORTADA ============ -->
+<div class="cover">
+  <div class="mark">S</div>
+  <div class="kicker">SyncUT · Equipo 2 · Ruta crítica</div>
+  <h1>Autenticación, Roles,<br>Sesiones y Auditoría</h1>
+  <p class="sub">Resumen técnico del estado real del módulo y guía para exponerlo.
+     Qué existe en base de datos, qué existe en código, qué falta y cómo contarlo en 10 minutos.</p>
+  <div class="meta">
+    <div><b>Módulo</b>Seguridad transversal (Squad 2 / Equipo 2)</div>
+    <div><b>Integrantes</b>Alexander · Alan · Wallmach · Erick</div>
+    <div><b>Stack</b>Next.js 16 (App Router) · Supabase Auth · PostgreSQL + RLS</div>
+    <div><b>Carpeta</b>apps/web/app/(auth)/ · supabase/migrations/ · packages/sdk</div>
+    <div><b>Documento</b>Resumen + guía de exposición</div>
+    <div><b>Fecha</b>11 de septiembre de 2026</div>
+  </div>
+</div>
+
+<!-- ============ 1 ============ -->
+<section>
+<h2><span class="n">01</span>Panorama en 60 segundos</h2>
+
+<p class="lead">El módulo es la <b>capa de seguridad transversal</b> de SyncUT: decide quién entra,
+qué rol tiene, qué filas de la base de datos puede ver y deja constancia de lo que hace.
+Es el bloqueador del proyecto: ningún otro squad puede consultar datos protegidos sin él.</p>
+
+<p>La idea central es que <b>la seguridad no vive en el frontend, vive en la base de datos</b>.
+Postgres, mediante Row Level Security (RLS), filtra cada consulta según el usuario que la hace.
+Aunque alguien manipule el navegador, la base no devuelve filas que no le corresponden.</p>
+
+<h3>Las cuatro piezas</h3>
+<table>
+  <tr><th style="width:26%">Pieza</th><th style="width:30%">Dónde vive</th><th>Para qué sirve</th></tr>
+  <tr><td><b>Identidad</b></td><td><code>auth.users</code> (Supabase)</td>
+      <td>Credenciales, contraseña cifrada con bcrypt, confirmación de email y emisión del JWT. No la escribimos nosotros: la gestiona Supabase.</td></tr>
+  <tr><td><b>Perfil y rol</b></td><td><code>public.profiles</code></td>
+      <td>Extiende al usuario con nombre, teléfono, avatar y sobre todo <code>role</code>. Es la tabla que consultan todas las políticas de seguridad.</td></tr>
+  <tr><td><b>Permisos</b></td><td><code>public.role_permissions</code></td>
+      <td>Catálogo RBAC: qué permiso concreto tiene cada rol (<code>approve:justificacion</code>, <code>manage:users</code>…).</td></tr>
+  <tr><td><b>Trazabilidad</b></td><td><code>public.audit_logs</code> y <code>public.session_tokens</code></td>
+      <td>Bitácora inmutable de acciones y registro de dispositivos/sesiones activas.</td></tr>
+</table>
+
+<div class="box">
+  <div class="t">La frase para arrancar la exposición</div>
+  <p>«Nuestro módulo responde tres preguntas: <b>¿quién eres?</b> (autenticación),
+  <b>¿qué puedes hacer?</b> (roles y RLS) y <b>¿qué hiciste?</b> (auditoría).
+  Las tres están resueltas a nivel de base de datos; la capa visual todavía va detrás.»</p>
+</div>
+</section>
+
+<!-- ============ 2 ============ -->
+<section>
+<h2><span class="n">02</span>Arquitectura: las tres capas</h2>
+
+<div class="ascii">   NAVEGADOR (Next.js 16 - App Router)
+   +--------------------------------------------------------------+
+   |  app/(auth)/login     app/(auth)/signup    app/(dashboard)    |
+   |  formularios          formularios          layout + paginas   |
+   +------------------------------+-------------------------------+
+                                  |  import
+   SDK COMPARTIDO                 v
+   +--------------------------------------------------------------+
+   |  packages/sdk/src/client.ts -> createSupabaseBrowserClient()  |
+   |  packages/sdk/src/types.ts  -> UserRole, UserProfile          |
+   |  packages/shared/validators -> validateEmail/Password/Role    |
+   |  packages/config            -> CORE_ROLES                     |
+   +------------------------------+-------------------------------+
+                                  |  HTTPS + JWT (anon key)
+   SUPABASE                       v
+   +--------------------------------------------------------------+
+   |  auth.users --[trigger handle_new_user()]--> public.profiles  |
+   |                                                    |          |
+   |               RLS evalua auth.uid() contra --------+          |
+   |                                                               |
+   |  role_permissions   session_tokens   audit_logs (inmutable)   |
+   +--------------------------------------------------------------+</div>
+
+<h3>Cómo se conecta la aplicación a Supabase</h3>
+<p>Hay un único punto de entrada, para que ningún squad cree su propio cliente:</p>
+<pre><span class="c">// packages/sdk/src/client.ts</span>
+<span class="k">import</span> { createBrowserClient } <span class="k">from</span> <span class="s">'@supabase/ssr'</span>;
+<span class="k">import type</span> { Database } <span class="k">from</span> <span class="s">'@plataforma/types'</span>;
+
+<span class="k">export const</span> createSupabaseBrowserClient = () =&gt; {
+  <span class="k">return</span> createBrowserClient&lt;Database&gt;(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+  );
+};</pre>
+
+<p>Se usa así desde cualquier componente cliente:
+<code>import { createSupabaseBrowserClient } from "@plataforma/sdk/client";</code></p>
+
+<div class="box">
+  <div class="t">Punto que impresiona en la exposición</div>
+  <p>Los tipos de TypeScript de toda la base de datos están <b>autogenerados</b> por Supabase
+  en <span class="path">packages/types/src/database.types.ts</span>. Si alguien cambia una columna en SQL
+  y no actualiza el código, <b>el build falla</b>. La base de datos y el código no pueden desincronizarse en silencio.</p>
+</div>
+</section>
+
+<!-- ============ 3 ============ -->
+<section>
+<h2><span class="n">03</span>La base de datos: cuatro tablas</h2>
+<p class="lead">Todo está en <span class="path">supabase/migrations/20240516000001_init_schemas.sql</span> (132 líneas).
+Es el archivo que hay que abrir si te piden «enséñame el código».</p>
+
+<h3>3.1 · <code>profiles</code> — el perfil y el rol</h3>
+<pre><span class="k">CREATE TABLE</span> public.profiles (
+  id          uuid <span class="k">PRIMARY KEY REFERENCES</span> auth.users(id) <span class="k">ON DELETE CASCADE</span>,
+  email       text <span class="k">NOT NULL</span>,
+  full_name   text <span class="k">NOT NULL</span>,
+  role        text <span class="k">NOT NULL DEFAULT</span> <span class="s">'student'</span>,
+  phone       text,
+  avatar_url  text,
+  created_at  timestamptz <span class="k">DEFAULT</span> now(),
+  updated_at  timestamptz <span class="k">DEFAULT</span> now(),
+  <span class="k">CONSTRAINT</span> role_check <span class="k">CHECK</span> (role <span class="k">IN</span> (<span class="s">'student','teacher','tutor','admin','coordinator'</span>))
+);</pre>
+<p>Tres detalles que conviene saber explicar:</p>
+<ul>
+  <li><b><code>id</code> es a la vez clave primaria y foránea</b> hacia <code>auth.users</code>: relación 1 a 1. No puede existir un perfil sin usuario real.</li>
+  <li><b><code>ON DELETE CASCADE</code></b>: si se borra el usuario en Supabase Auth, su perfil desaparece automáticamente. Cumplimiento de «derecho al olvido» sin código extra.</li>
+  <li><b><code>CHECK</code> sobre <code>role</code></b>: es imposible insertar un rol inventado. La validación es del motor, no de la aplicación.</li>
+</ul>
+<p>Índices: <code>idx_profiles_email</code> y <code>idx_profiles_role</code>, porque son las dos columnas por las que más se filtra.</p>
+
+<h3>3.2 · <code>role_permissions</code> — el catálogo RBAC</h3>
+<p>Tabla con <code>UNIQUE(role, permission)</code>. Permite cambiar permisos sin recompilar:
+un permiso es una fila, no una línea de código. Ejemplos previstos:
+<code>view:citas</code>, <code>approve:justificacion</code>, <code>manage:users</code>, <code>view:audit_logs</code>.</p>
+
+<h3>3.3 · <code>session_tokens</code> — dispositivos activos</h3>
+<p>Guarda <code>token</code> (único), <code>device_name</code>, <code>ip_address</code> (tipo <code>inet</code>),
+<code>expires_at</code> y <code>revoked_at</code>. El truco de diseño: <b>no se borra una sesión, se marca</b>
+con <code>revoked_at = now()</code>. Así queda el histórico de quién cerró sesión y cuándo.
+Sirve para «cerrar sesión en todos los dispositivos» y para detectar accesos desde IPs extrañas.</p>
+
+<h3>3.4 · <code>audit_logs</code> — la bitácora inmutable</h3>
+<pre><span class="k">CREATE TABLE</span> public.audit_logs (
+  id          uuid <span class="k">PRIMARY KEY DEFAULT</span> gen_random_uuid(),
+  user_id     uuid <span class="k">REFERENCES</span> public.profiles(id) <span class="k">ON DELETE SET NULL</span>,
+  action      text <span class="k">NOT NULL</span>,        <span class="c">-- LOGIN, SIGNUP, UPDATE, DELETE...</span>
+  table_name  text <span class="k">NOT NULL</span>,        <span class="c">-- tabla afectada</span>
+  record_id   uuid,                    <span class="c">-- fila afectada</span>
+  old_values  jsonb,                   <span class="c">-- antes</span>
+  new_values  jsonb,                   <span class="c">-- después</span>
+  ip_address  inet,
+  user_agent  text,
+  created_at  timestamptz <span class="k">DEFAULT</span> now() <span class="k">NOT NULL</span>
+);</pre>
+<p><b>Por qué <code>ON DELETE SET NULL</code> y no <code>CASCADE</code>:</b> si se borra un usuario,
+sus registros de auditoría <b>sobreviven</b> con <code>user_id = NULL</code>.
+Borrar una cuenta no puede borrar la evidencia de lo que hizo. Es el detalle que distingue una
+bitácora de verdad de un simple log.</p>
+<p><b>Por qué <code>old_values</code> / <code>new_values</code> son <code>jsonb</code>:</b> una sola tabla sirve
+para auditar cualquier otra tabla del sistema, sin importar sus columnas.</p>
+</section>
+
+<!-- ============ 4 ============ -->
+<section class="pagebreak">
+<h2><span class="n">04</span>Roles: el sistema RBAC</h2>
+
+<p class="lead">Cinco roles, definidos en cuatro lugares que deben coincidir siempre.</p>
+
+<table>
+  <tr><th style="width:22%">Rol</th><th>Qué representa</th></tr>
+  <tr><td><code>student</code></td><td>Alumno. Rol por defecto de cualquier registro nuevo. Ve y crea sus propias citas y justificaciones.</td></tr>
+  <tr><td><code>teacher</code></td><td>Docente. Pasa lista, aprueba justificaciones, genera notificaciones.</td></tr>
+  <tr><td><code>tutor</code></td><td>Tutor académico. Acompañamiento y agenda de tutorías.</td></tr>
+  <tr><td><code>coordinator</code></td><td>Coordinador. Gestiona usuarios y grupos, consulta auditoría.</td></tr>
+  <tr><td><code>admin</code></td><td>Administrador. Acceso total, incluido el Panel de Gobernanza.</td></tr>
+</table>
+
+<h3>Dónde está declarado cada rol (la «fuente de verdad» repetida)</h3>
+<table>
+  <tr><th style="width:44%">Archivo</th><th style="width:26%">Constante</th><th>Función</th></tr>
+  <tr><td><span class="path">supabase/migrations/…_init_schemas.sql</span></td><td><code>CONSTRAINT role_check</code></td><td>Autoridad final. Nada entra si no está aquí.</td></tr>
+  <tr><td><span class="path">packages/sdk/src/types.ts</span></td><td><code>type UserRole</code></td><td>Tipado en TypeScript.</td></tr>
+  <tr><td><span class="path">packages/config/src/index.ts</span></td><td><code>CORE_ROLES</code></td><td>Configuración compartida entre squads.</td></tr>
+  <tr><td><span class="path">packages/shared/src/validators.ts</span></td><td><code>VALID_ROLES</code></td><td>Validación en tiempo de ejecución.</td></tr>
+</table>
+
+<div class="box warn">
+  <div class="t">Riesgo conocido — dilo tú antes de que lo pregunten</div>
+  <p>La lista de roles está duplicada en cuatro sitios. Si mañana se añade un rol <code>guest</code>,
+  hay que tocar los cuatro o el sistema se rompe de forma silenciosa.
+  <b>Mejora propuesta:</b> convertirlo en un <code>ENUM</code> de Postgres y que TypeScript lo derive
+  del tipo autogenerado, con una sola fuente de verdad.</p>
+</div>
+
+<h3>Asignación automática del rol: el trigger</h3>
+<p>Nadie asigna el rol a mano. Cuando Supabase crea un usuario, un trigger crea el perfil:</p>
+<pre><span class="c">-- supabase/migrations/20260523000001_sync_auth_profiles.sql</span>
+<span class="k">CREATE OR REPLACE FUNCTION</span> public.handle_new_user()
+<span class="k">RETURNS</span> trigger <span class="k">AS</span> $$
+<span class="k">BEGIN</span>
+  <span class="k">INSERT INTO</span> public.profiles (id, email, full_name, role)
+  <span class="k">VALUES</span> (
+    new.id,
+    new.email,
+    <span class="k">COALESCE</span>(new.raw_user_meta_data-&gt;&gt;<span class="s">'full_name'</span>, <span class="s">'Nuevo Usuario'</span>),
+    <span class="k">COALESCE</span>(new.raw_user_meta_data-&gt;&gt;<span class="s">'role'</span>, <span class="s">'student'</span>)
+  );
+  <span class="k">RETURN</span> new;
+<span class="k">END</span>;
+$$ <span class="k">LANGUAGE</span> plpgsql <span class="k">SECURITY DEFINER</span>;
+
+<span class="k">CREATE TRIGGER</span> on_auth_user_created
+  <span class="k">AFTER INSERT ON</span> auth.users
+  <span class="k">FOR EACH ROW EXECUTE FUNCTION</span> public.handle_new_user();</pre>
+
+<p><b>Dos palabras clave que te pueden preguntar:</b></p>
+<ul>
+  <li><code>SECURITY DEFINER</code>: la función se ejecuta con los privilegios de quien la creó, no de quien la dispara.
+      Es lo que permite escribir en <code>profiles</code> aunque el usuario nuevo todavía no tenga permisos.</li>
+  <li><code>COALESCE</code>: toma el primer valor no nulo. Si el registro no manda rol, queda <code>'student'</code>.
+      <b>El privilegio mínimo es el valor por defecto.</b></li>
+</ul>
+
+<h3>El administrador maestro</h3>
+<p>La migración <span class="path">20260606000001_set_master_admin.sql</span> reescribe el trigger para
+que un correo concreto (<code>jassiel.rr1502@gmail.com</code>) reciba siempre <code>role = 'admin'</code>,
+y además hace un <code>UPDATE</code> por si el perfil ya existía. Garantiza que el proyecto nunca se
+quede sin administrador.</p>
+<div class="box warn">
+  <div class="t">Observación honesta sobre esta decisión</div>
+  <p>Es un correo <b>quemado en el código SQL</b>. Funciona para la etapa académica del proyecto,
+  pero en producción el administrador debería promoverse desde una tabla de configuración o una
+  variable de entorno, no desde una migración versionada en el repositorio.</p>
+</div>
+</section>
+
+<!-- ============ 5 ============ -->
+<section>
+<h2><span class="n">05</span>RLS: la seguridad que vive en la base de datos</h2>
+
+<p class="lead">Row Level Security es el corazón del módulo y el mejor argumento técnico de la exposición.
+Es un filtro <code>WHERE</code> invisible que Postgres añade a <b>toda</b> consulta, venga de donde venga.</p>
+
+<p>Se activa tabla por tabla:</p>
+<pre><span class="k">ALTER TABLE</span> public.profiles         <span class="k">ENABLE ROW LEVEL SECURITY</span>;
+<span class="k">ALTER TABLE</span> public.audit_logs       <span class="k">ENABLE ROW LEVEL SECURITY</span>;
+<span class="k">ALTER TABLE</span> public.session_tokens   <span class="k">ENABLE ROW LEVEL SECURITY</span>;
+<span class="k">ALTER TABLE</span> public.role_permissions <span class="k">ENABLE ROW LEVEL SECURITY</span>;</pre>
+
+<p>La función clave es <code>auth.uid()</code>: devuelve el UUID del usuario extraído del JWT firmado.
+No se puede falsificar desde el navegador, porque la firma se verifica en el servidor.</p>
+
+<h3>Las seis políticas implementadas</h3>
+<table>
+  <tr><th style="width:32%">Política</th><th style="width:14%">Operación</th><th>Regla en una línea</th></tr>
+  <tr><td><code>profiles_self_view</code></td><td>SELECT</td><td>Ves tu propio perfil; los admin ven todos.</td></tr>
+  <tr><td><code>profiles_update_own</code></td><td>UPDATE</td><td>Editas tu propio perfil; los admin editan cualquiera.</td></tr>
+  <tr><td><code>audit_logs_view</code></td><td>SELECT</td><td>Ves tus propios eventos; los admin ven el histórico completo.</td></tr>
+  <tr><td><code>audit_logs_no_delete</code></td><td>DELETE</td><td><code>USING (false)</code> — nadie borra nunca. Inmutabilidad real.</td></tr>
+  <tr><td><code>session_tokens_view</code></td><td>SELECT</td><td>Ves tus dispositivos; los admin ven todos.</td></tr>
+  <tr><td><code>role_permissions_view</code></td><td>SELECT</td><td><code>USING (true)</code> — el catálogo de permisos es público para usuarios autenticados.</td></tr>
+</table>
+
+<h3>La política que hay que leer en voz alta</h3>
+<pre><span class="k">CREATE POLICY</span> <span class="s">"audit_logs_view"</span>
+  <span class="k">ON</span> public.audit_logs <span class="k">FOR SELECT TO</span> authenticated
+  <span class="k">USING</span> (
+    user_id = auth.uid()                      <span class="c">-- tus propios eventos</span>
+    <span class="k">OR EXISTS</span> (
+      <span class="k">SELECT</span> 1 <span class="k">FROM</span> public.profiles
+      <span class="k">WHERE</span> id = auth.uid() <span class="k">AND</span> role = <span class="s">'admin'</span>   <span class="c">-- o eres admin</span>
+    )
+  );
+
+<span class="k">CREATE POLICY</span> <span class="s">"audit_logs_no_delete"</span>
+  <span class="k">ON</span> public.audit_logs <span class="k">FOR DELETE TO</span> authenticated
+  <span class="k">USING</span> (<span class="s">false</span>);   <span class="c">-- ni el admin puede borrar la evidencia</span></pre>
+
+<p><b>Qué demostrar:</b> un alumno que ejecute <code>SELECT * FROM audit_logs</code> no recibe un error
+de permisos: recibe <b>cero filas</b>. La base de datos no revela siquiera que existan otros registros.</p>
+
+<div class="box">
+  <div class="t">Diferencia de <code>USING</code> y <code>WITH CHECK</code></div>
+  <p><code>USING</code> filtra las filas que <b>puedes leer o tocar</b>. <code>WITH CHECK</code> valida las filas
+  que <b>intentas escribir</b>. En <code>profiles_update_own</code> están los dos, para que nadie lea su propia fila
+  y la convierta en la de otro usuario.</p>
+</div>
+
+<div class="box crit">
+  <div class="t">Hueco de seguridad detectado — mencionarlo suma puntos</div>
+  <p>Las políticas <code>profiles_self_view</code> y <code>profiles_update_own</code> usan
+  <code>auth.uid() = id OR role = 'admin'</code>. Ese <code>role</code> es <b>el de la fila que se está evaluando</b>,
+  no el del usuario que consulta. Efecto real: cualquier usuario autenticado puede leer y modificar
+  los perfiles cuyo rol sea <code>admin</code>. Es decir, <b>un alumno podría editar el perfil del administrador</b>.</p>
+  <p>Además, <code>profiles_update_own</code> no impide que un usuario se cambie su propio <code>role</code>
+  a <code>admin</code> — el documento de diseño lo da por protegido, pero la política no lo implementa.</p>
+  <p><b>Corrección:</b> usar la subconsulta <code>EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid()
+  AND role = 'admin')</code>, igual que en <code>audit_logs_view</code>, y añadir un <code>WITH CHECK</code>
+  que congele la columna <code>role</code> salvo para administradores.</p>
+</div>
+</section>
+
+<!-- ============ 6 ============ -->
+<section>
+<h2><span class="n">06</span>Registro y login: diseño frente a implementación actual</h2>
+
+<p class="lead">Aquí está el punto más importante de honestidad de la exposición: el <b>diseño</b> del flujo
+está completo y documentado, pero el <b>código actual</b> de las pantallas es todavía una maqueta funcional
+que no habla con Supabase.</p>
+
+<h3>6.1 · Flujo de registro diseñado</h3>
+<ol class="steps">
+  <li>El usuario llena nombre, correo y contraseña. Validación en el navegador.</li>
+  <li>Se llama a <code>supabase.auth.signUp({ email, password, options: { data: { full_name } } })</code>.</li>
+  <li>Supabase crea la fila en <code>auth.users</code>, cifra la contraseña con bcrypt y envía correo de confirmación.</li>
+  <li>El trigger <code>handle_new_user()</code> dispara y crea el perfil con rol <code>student</code>.</li>
+  <li>Se registra el evento <code>SIGNUP</code> en <code>audit_logs</code>.</li>
+  <li>El usuario confirma su correo y ya puede iniciar sesión.</li>
+</ol>
+
+<h3>6.2 · Flujo de login diseñado</h3>
+<ol class="steps">
+  <li><code>supabase.auth.signInWithPassword({ email, password })</code> valida contra <code>auth.users</code>.</li>
+  <li>Si es correcto: se emite el JWT, se inserta la fila en <code>session_tokens</code> (dispositivo, IP, expiración) y se guarda una cookie <code>HttpOnly</code>.</li>
+  <li>Se registra <code>LOGIN</code> en <code>audit_logs</code>.</li>
+  <li>Si falla: se registra <code>LOGIN_FAILED</code> con IP y motivo; a partir de tres intentos en 15 minutos se bloquea temporalmente.</li>
+  <li>En cada petición posterior, el middleware valida el JWT y RLS filtra los datos.</li>
+</ol>
+
+<h3>6.3 · Lo que hace el código hoy</h3>
+<p><span class="path">apps/web/app/(auth)/login/page.tsx</span> — componente <code>"use client"</code> con
+formulario, mostrar/ocultar contraseña, «recordar sesión» y manejo de errores. La validación es una maqueta:</p>
+<pre><span class="c">// Mock validation to match the mockup error state</span>
+<span class="k">if</span> (password !== <span class="s">"hunter2"</span>) {
+  setErrorMsg(<span class="s">"Contraseña incorrecta. Por favor intente de nuevo."</span>);
+  <span class="k">return</span>;
+}
+
+window.localStorage.setItem(<span class="s">"syncut_beta_session"</span>, JSON.stringify({
+  email: cleanUsername,
+  role: cleanUsername.toLowerCase().includes(<span class="s">"admin"</span>) ? <span class="s">"admin"</span> : <span class="s">"student"</span>,
+  loggedAt: <span class="k">new</span> Date().toISOString(),
+}));
+
+router.push(<span class="s">"/dashboard"</span>);</pre>
+
+<p><span class="path">apps/web/app/(auth)/signup/page.tsx</span> — valida campos obligatorios, longitud mínima
+de 8 caracteres, coincidencia de contraseñas y aceptación de términos; incluye un medidor visual de
+fuerza. Después guarda el usuario en <code>localStorage["syncut_beta_users"]</code> y redirige al login.</p>
+
+<div class="box crit">
+  <div class="t">Cómo decirlo sin que suene mal</div>
+  <p>«Las pantallas de login y registro están construidas contra la maqueta de diseño y usan
+  <code>localStorage</code> como sesión temporal, para que los otros cinco squads pudieran navegar y
+  desarrollar sus módulos sin esperarnos. La contraseña de demostración es literal y la sesión vive
+  solo en el navegador: <b>no es un mecanismo de seguridad, es un andamio</b>. El siguiente paso es
+  sustituir esas dos funciones por <code>signUp</code> y <code>signInWithPassword</code>; la base de datos
+  ya está lista para recibirlas.»</p>
+</div>
+
+<div class="box warn">
+  <div class="t">Detalle técnico que conviene tener claro</div>
+  <p>En la maqueta, el rol se decide con <code>email.includes("admin")</code>, en el navegador.
+  Eso significa que hoy cualquiera podría escribir <code>admin@loquesea.com</code> y obtener rol admin
+  <b>en el estado local</b>. No otorga acceso a datos reales, porque RLS sigue vigente en Supabase y
+  el JWT nunca se emite; el efecto se limita a la interfaz.</p>
+</div>
+
+<p>Los validadores «de verdad» ya existen y están listos para conectarse, en
+<span class="path">packages/shared/src/validators.ts</span>:</p>
+<pre><span class="k">validateEmail</span>(email)     <span class="c">// formato + rechazo de patrones de inyección ( ; -- /* )</span>
+<span class="k">validatePassword</span>(pass)   <span class="c">// 8+ caracteres, mayúscula, minúscula y número</span>
+<span class="k">validateRole</span>(role)       <span class="c">// pertenencia a VALID_ROLES</span></pre>
+</section>
+
+<!-- ============ 7 ============ -->
+<section class="pagebreak">
+<h2><span class="n">07</span>Protección de rutas y sesión</h2>
+
+<p>Hoy la protección ocurre en <b>tres puntos del cliente</b>, y falta el cuarto (el servidor).</p>
+
+<div class="grid2">
+  <div class="card">
+    <div class="t">1 · Redirección de entrada</div>
+    <p class="path">apps/web/app/page.tsx</p>
+    <p>Si hay <code>syncut_beta_session</code> manda a <code>/dashboard</code>; si no, a <code>/login</code>.</p>
+  </div>
+  <div class="card">
+    <div class="t">2 · Menú por rol</div>
+    <p class="path">apps/web/app/(dashboard)/layout.tsx</p>
+    <p>Lee la sesión, calcula <code>isMasterAdmin</code> y filtra el enlace «Panel Gobernanza» del menú. También implementa el logout: borra la clave y redirige.</p>
+  </div>
+  <div class="card">
+    <div class="t">3 · Verificación real de rol</div>
+    <p class="path">apps/web/app/(dashboard)/admin/page.tsx</p>
+    <p>Es el único lugar que consulta Supabase de verdad: <code>auth.getUser()</code> y luego el <code>role</code> en <code>profiles</code>. Si no es <code>admin</code>, pinta «Acceso Restringido».</p>
+  </div>
+  <div class="card">
+    <div class="t">4 · Middleware <span class="pill no">Pendiente</span></div>
+    <p class="path">apps/web/middleware.ts</p>
+    <p>No existe todavía. Es la pieza que debe validar el JWT y refrescar la cookie <b>antes</b> de renderizar cualquier ruta protegida.</p>
+  </div>
+</div>
+
+<h3>La verificación en cascada del panel de administración</h3>
+<p>Vale la pena explicarla porque muestra pensamiento defensivo: tiene tres niveles de respaldo.</p>
+<pre><span class="c">// 1) ¿Hay sesión local? Si no, acceso denegado.</span>
+<span class="k">const</span> localSession = window.localStorage.getItem(<span class="s">"syncut_beta_session"</span>);
+
+<span class="c">// 2) ¿Hay variables de entorno de Supabase? Entonces manda la base de datos:</span>
+<span class="k">const</span> { data: { user } } = <span class="k">await</span> supabase.auth.getUser();
+<span class="k">const</span> { data: profile } = <span class="k">await</span> supabase
+  .from(<span class="s">"profiles"</span>).select(<span class="s">"role"</span>).eq(<span class="s">"id"</span>, user.id).single();
+<span class="k">if</span> (profile?.role === <span class="s">"admin"</span>) <span class="k">return</span> autorizado;
+
+<span class="c">//    2b) respaldo: buscar el perfil por el correo de la sesión local</span>
+<span class="c">// 3) Sin variables de entorno (modo maqueta offline): validación local</span>
+<span class="k">const</span> isMockAdmin = email === <span class="s">"jassiel.rr1502@gmail.com"</span>
+  || parsed?.role === <span class="s">"admin"</span> || email?.includes(<span class="s">"admin"</span>);</pre>
+
+<p><b>La jerarquía correcta está bien planteada:</b> si la base de datos responde, la base de datos decide;
+el modo local solo actúa cuando no hay conexión configurada.</p>
+</section>
+
+<!-- ============ 8 ============ -->
+<section>
+<h2><span class="n">08</span>Logs y auditoría</h2>
+
+<p class="lead">La auditoría está <b>diseñada al completo, leída en el panel ejecutivo y todavía no escrita</b>
+por la aplicación. Es el estado exacto que hay que comunicar.</p>
+
+<h3>Eventos previstos</h3>
+<table>
+  <tr><th style="width:33%">Autenticación</th><th style="width:33%">Control de acceso</th><th>Datos</th></tr>
+  <tr>
+    <td><code>LOGIN</code>, <code>LOGOUT</code>, <code>LOGIN_FAILED</code>, <code>SIGNUP</code>,
+        <code>PASSWORD_CHANGE</code>, <code>PASSWORD_RESET</code>, <code>EMAIL_CHANGE</code>,
+        <code>EMAIL_CONFIRMED</code>, <code>SESSION_REVOKED</code>, <code>BAN_USER</code></td>
+    <td><code>ROLE_UPDATED</code>, <code>PERMISSION_GRANTED</code>, <code>PERMISSION_REVOKED</code>,
+        <code>ACCESS_DENIED</code></td>
+    <td><code>PROFILE_UPDATE</code>, <code>CITA_CREATE/UPDATE/DELETE</code>,
+        <code>JUSTIFICACION_CREATE/UPDATE</code>, <code>NOTIFICACION_SEND</code></td>
+  </tr>
+</table>
+
+<h3>La función de escritura (especificada, aún no creada)</h3>
+<pre><span class="c">// apps/web/app/(auth)/lib/auditLog.ts  ← archivo por implementar</span>
+<span class="k">export async function</span> logAudit(entry: AuditLogEntry) {
+  <span class="k">const</span> { data, error } = <span class="k">await</span> supabase.from(<span class="s">'audit_logs'</span>).insert({
+    user_id: entry.userId,     action:     entry.action,
+    table_name: entry.tableName, record_id: entry.recordId,
+    old_values: entry.oldValues, new_values: entry.newValues,
+    ip_address: entry.ipAddress, user_agent: entry.userAgent,
+  });
+  <span class="k">if</span> (error) console.error(<span class="s">'Audit log failed:'</span>, error);
+  <span class="c">// No se lanza excepción: auditar nunca debe romper la operación del usuario</span>
+  <span class="k">return</span> data;
+}</pre>
+<p>Esa última decisión de diseño es importante y conviene subrayarla: <b>si falla la auditoría,
+la operación del usuario continúa</b>. Se registra el problema, pero no se rompe la experiencia.</p>
+
+<h3>Lo que sí está funcionando: la lectura en tiempo real</h3>
+<p>El Panel de Gobernanza consume <code>audit_logs</code> y los convierte en un feed de actividad.</p>
+<p><span class="path">apps/web/components/modules/executive-dashboard/live-data.ts</span> — consulta inicial:</p>
+<pre><span class="k">await</span> supabase
+  .from(<span class="s">"audit_logs"</span>)
+  .select(<span class="s">"user_id, action, table_name, created_at"</span>, { count: <span class="s">"exact"</span> })
+  .order(<span class="s">"created_at"</span>, { ascending: <span class="s">false</span> })
+  .limit(30);</pre>
+
+<p><span class="path">…/executive-dashboard-page.tsx</span> — suscripción a Supabase Realtime, que empuja
+cada nuevo registro al feed sin recargar la página:</p>
+<pre>supabase.channel(<span class="s">"executive-audit-stream"</span>)
+  .on(<span class="s">"postgres_changes"</span>,
+     { event: <span class="s">"INSERT"</span>, schema: <span class="s">"public"</span>, table: <span class="s">"audit_logs"</span> },
+     (payload) =&gt; { <span class="c">/* añade la actividad al feed en vivo */</span> })
+  .subscribe();</pre>
+
+<p>Hay además funciones auxiliares que enriquecen cada evento: <code>inferModule()</code> deduce a qué
+módulo pertenece según la tabla, <code>inferAction()</code> clasifica el tipo de acción e
+<code>inferImpact()</code> asigna un nivel de impacto (Alto / Medio / Bajo). Los datos se pueden exportar
+a CSV con <code>toCsvReport()</code>.</p>
+
+<div class="box warn">
+  <div class="t">El resumen de una frase</div>
+  <p>«La tubería de auditoría está construida de la mitad hacia adelante: la tabla existe, es inmutable,
+  se lee y se transmite en vivo al panel ejecutivo. Lo que falta es el emisor —<code>logAudit()</code>—
+  conectado a los puntos críticos. Es trabajo de conexión, no de arquitectura.»</p>
+</div>
+
+<p>Todo el sistema degrada con elegancia: si no hay <code>NEXT_PUBLIC_SUPABASE_URL</code> ni
+<code>NEXT_PUBLIC_SUPABASE_ANON_KEY</code>, las funciones devuelven datos de respaldo y marcan
+<code>hasLiveSource: false</code> en lugar de fallar.</p>
+</section>
+
+<!-- ============ 9 ============ -->
+<section class="pagebreak">
+<h2><span class="n">09</span>Estado real del módulo</h2>
+<p class="lead">Tabla de referencia. Si solo memorizas una página del documento, que sea esta.</p>
+
+<table>
+  <tr><th style="width:34%">Componente</th><th style="width:15%">Estado</th><th>Detalle</th></tr>
+  <tr><td>Esquema de BD (4 tablas)</td><td><span class="pill ok">Listo</span></td><td>Migración inicial con índices y constraints.</td></tr>
+  <tr><td>Políticas RLS</td><td><span class="pill part">Parcial</span></td><td>6 políticas activas; falta corregir la comparación de rol en <code>profiles</code>.</td></tr>
+  <tr><td>Trigger <code>handle_new_user()</code></td><td><span class="pill ok">Listo</span></td><td>Crea perfil automáticamente con rol por defecto.</td></tr>
+  <tr><td>Admin maestro</td><td><span class="pill ok">Listo</span></td><td>Garantizado por migración.</td></tr>
+  <tr><td>Cliente Supabase (SDK)</td><td><span class="pill ok">Listo</span></td><td><code>createSupabaseBrowserClient()</code> centralizado.</td></tr>
+  <tr><td>Tipos autogenerados</td><td><span class="pill ok">Listo</span></td><td><code>packages/types/src/database.types.ts</code>.</td></tr>
+  <tr><td>Validadores</td><td><span class="pill ok">Listo</span></td><td>Email, contraseña y rol; sin conectar a los formularios.</td></tr>
+  <tr><td>UI de login y registro</td><td><span class="pill ok">Listo</span></td><td>Accesible, con estados de error y medidor de fuerza.</td></tr>
+  <tr><td>Lógica de login / registro</td><td><span class="pill no">Maqueta</span></td><td>Usa <code>localStorage</code>; no llama a Supabase Auth.</td></tr>
+  <tr><td>Escritura de <code>audit_logs</code></td><td><span class="pill no">Pendiente</span></td><td><code>logAudit()</code> especificado, no implementado.</td></tr>
+  <tr><td>Uso de <code>session_tokens</code></td><td><span class="pill no">Pendiente</span></td><td>Tabla creada, sin inserción ni revocación.</td></tr>
+  <tr><td>Poblado de <code>role_permissions</code></td><td><span class="pill no">Pendiente</span></td><td>Tabla vacía; permisos aún definidos solo en el documento.</td></tr>
+  <tr><td><code>middleware.ts</code></td><td><span class="pill no">Pendiente</span></td><td>No hay validación de sesión del lado del servidor.</td></tr>
+  <tr><td>Recuperación de contraseña</td><td><span class="pill no">Pendiente</span></td><td>El enlace existe en la UI y apunta a <code>#</code>.</td></tr>
+  <tr><td>MFA / 2FA</td><td><span class="pill no">Pendiente</span></td><td>Planificado en el Sprint 1 del MASTER.</td></tr>
+  <tr><td>Lectura de auditoría</td><td><span class="pill ok">Listo</span></td><td>Consulta + Realtime + exportación CSV en el panel ejecutivo.</td></tr>
+</table>
+
+<h3>Los cinco siguientes pasos, en orden</h3>
+<ol class="steps">
+  <li><b>Corregir las políticas RLS de <code>profiles</code></b> con la subconsulta <code>EXISTS</code> y un <code>WITH CHECK</code> que proteja la columna <code>role</code>. Es seguridad, va primero.</li>
+  <li><b>Sustituir la maqueta por Supabase Auth</b> en las dos pantallas, usando los validadores que ya existen.</li>
+  <li><b>Crear <code>apps/web/middleware.ts</code></b> para validar la sesión en el servidor antes de renderizar rutas protegidas, y quitar la dependencia de <code>localStorage</code>.</li>
+  <li><b>Implementar <code>logAudit()</code></b> y engancharlo a login, logout, registro, cambio de rol y cambio de contraseña. El panel se llena solo.</li>
+  <li><b>Poblar <code>role_permissions</code></b> y construir un <i>helper</i> <code>can(permission)</code> que los demás squads consuman.</li>
+</ol>
+</section>
+
+<!-- ============ 10 ============ -->
+<section class="pagebreak">
+<h2><span class="n">10</span>Guía de exposición · guion de 10 minutos</h2>
+
+<div class="script-row">
+  <div class="time">0:00–1:00</div>
+  <div class="what"><b>Encuadre: por qué este módulo es la ruta crítica</b>
+    <div class="say">«Somos el Equipo 2. Nuestro módulo no tiene pantalla propia que lucir, pero sin él ningún
+    otro squad puede leer un dato protegido. Resolvemos tres preguntas: quién eres, qué puedes hacer y qué hiciste.»</div>
+  </div>
+</div>
+
+<div class="script-row">
+  <div class="time">1:00–2:30</div>
+  <div class="what"><b>Arquitectura de tres capas</b>
+    <div>Muestra el diagrama de la sección 2. Insiste en la idea fuerza: la seguridad vive en la base de datos, no en el navegador.</div>
+    <div class="say">«Si alguien abre las herramientas de desarrollo y modifica el frontend, no consigue nada:
+    Postgres filtra las filas antes de que salgan del servidor.»</div>
+  </div>
+</div>
+
+<div class="script-row">
+  <div class="time">2:30–4:30</div>
+  <div class="what"><b>Las cuatro tablas</b>
+    <div>Abre la migración inicial. Destaca tres decisiones de diseño, no las nueve columnas:
+    <code>ON DELETE CASCADE</code> en perfiles, <code>ON DELETE SET NULL</code> en auditoría y el <code>CHECK</code> de roles.</div>
+    <div class="say">«Fíjense en el contraste: al borrar un usuario, su perfil desaparece pero su auditoría
+    sobrevive. Borrar una cuenta no puede borrar la evidencia.»</div>
+  </div>
+</div>
+
+<div class="script-row">
+  <div class="time">4:30–6:00</div>
+  <div class="what"><b>Roles y el trigger automático</b>
+    <div>Explica los cinco roles y lee <code>handle_new_user()</code>. Menciona <code>SECURITY DEFINER</code> y el privilegio mínimo por defecto.</div>
+    <div class="say">«Nadie asigna roles a mano. Al registrarse, la base de datos crea el perfil sola,
+    siempre con el rol de menor privilegio.»</div>
+  </div>
+</div>
+
+<div class="script-row">
+  <div class="time">6:00–7:30</div>
+  <div class="what"><b>RLS en vivo — el momento fuerte</b>
+    <div>Lee <code>audit_logs_view</code> y <code>audit_logs_no_delete</code>. Si puedes, demuéstralo en el panel de Supabase.</div>
+    <div class="say">«<code>USING (false)</code>: ni el administrador puede borrar un registro de auditoría.
+    Eso es inmutabilidad garantizada por el motor, no por una promesa del código.»</div>
+  </div>
+</div>
+
+<div class="script-row">
+  <div class="time">7:30–9:00</div>
+  <div class="what"><b>Demostración: login → dashboard → panel restringido</b>
+    <div>Entra con un usuario normal, enseña que «Panel Gobernanza» no aparece en el menú;
+    intenta entrar por URL y muestra la pantalla «Acceso Restringido». Luego entra como admin y muestra el feed de auditoría.</div>
+  </div>
+</div>
+
+<div class="script-row">
+  <div class="time">9:00–10:00</div>
+  <div class="what"><b>Estado real y siguientes pasos</b>
+    <div>Proyecta la tabla de la sección 9 y cierra con los cinco pasos. Declara tú mismo la deuda técnica.</div>
+    <div class="say">«Los cimientos están terminados y son sólidos. Lo que falta no es arquitectura, es conexión:
+    reemplazar la maqueta de las dos pantallas por las llamadas reales y encender el emisor de auditoría.»</div>
+  </div>
+</div>
+
+<h3>Cuatro cosas que no deben faltar</h3>
+<ul>
+  <li>Decir la palabra <b>RLS</b> y explicarla en una frase entendible.</li>
+  <li>Enseñar <b>código real</b> en pantalla, no solo diagramas: la migración y el trigger.</li>
+  <li>Declarar la <b>deuda técnica</b> antes de que te pregunten. Genera confianza.</li>
+  <li>Cerrar conectando con los otros squads: «cuando encendamos <code>logAudit()</code>,
+      el panel del Squad 5 se llena solo».</li>
+</ul>
+</section>
+
+<!-- ============ 11 ============ -->
+<section>
+<h2><span class="n">11</span>Preguntas que te van a hacer (con respuesta)</h2>
+
+<div class="qa">
+  <div class="q">¿Dónde se guardan las contraseñas?</div>
+  <div class="a">Nunca en nuestras tablas. Viven cifradas con bcrypt en <code>auth.users</code>, que administra
+  Supabase. Nuestra tabla <code>profiles</code> no tiene ni puede tener una columna de contraseña.</div>
+</div>
+
+<div class="qa">
+  <div class="q">¿Qué pasa si alguien modifica el JavaScript del navegador para ponerse rol admin?</div>
+  <div class="a">Cambiaría lo que ve en pantalla, nada más. El rol que importa se lee de <code>profiles</code>
+  y las políticas RLS lo evalúan del lado del servidor usando <code>auth.uid()</code>, que sale del JWT firmado.
+  Sin JWT válido, la base devuelve cero filas.</div>
+</div>
+
+<div class="qa">
+  <div class="q">¿Por qué duplicar el correo en <code>profiles</code> si ya está en <code>auth.users</code>?</div>
+  <div class="a">Es denormalización deliberada. <code>auth.users</code> está en un esquema interno de Supabase
+  al que no se puede hacer <code>JOIN</code> libremente desde el cliente. Tener el correo en <code>profiles</code>
+  evita una llamada extra en cada consulta y permite indexarlo.</div>
+</div>
+
+<div class="qa">
+  <div class="q">¿Cómo garantizan que un log no se pueda alterar?</div>
+  <div class="a">Con la política <code>audit_logs_no_delete</code> que devuelve <code>USING (false)</code>:
+  ningún rol autenticado puede borrar. Tampoco existe política de <code>UPDATE</code>, y en RLS lo que no está
+  permitido explícitamente está prohibido. Además <code>created_at</code> lo pone el servidor, no el cliente.</div>
+</div>
+
+<div class="qa">
+  <div class="q">¿Y si borran un usuario, se pierde su auditoría?</div>
+  <div class="a">No. La clave foránea es <code>ON DELETE SET NULL</code>: los eventos permanecen con
+  <code>user_id</code> nulo. Es una decisión de diseño consciente y es lo que exige cualquier norma de cumplimiento.</div>
+</div>
+
+<div class="qa">
+  <div class="q">¿El login ya funciona contra la base de datos?</div>
+  <div class="a">Todavía no. Las pantallas están terminadas y el esquema está listo, pero la validación actual
+  es una maqueta con <code>localStorage</code> que construimos para desbloquear a los otros cinco squads.
+  La sustitución son dos llamadas: <code>signUp</code> y <code>signInWithPassword</code>.</div>
+</div>
+
+<div class="qa">
+  <div class="q">¿Qué es <code>SECURITY DEFINER</code> y por qué lo usan?</div>
+  <div class="a">Hace que la función se ejecute con los privilegios de quien la creó. Sin eso, el trigger no
+  podría insertar en <code>profiles</code> en el instante en que nace el usuario, porque todavía no tiene permisos propios.</div>
+</div>
+
+<div class="qa">
+  <div class="q">¿Cuál es la diferencia entre roles y permisos?</div>
+  <div class="a">El rol es la etiqueta del usuario y vive en <code>profiles.role</code>. El permiso es la acción
+  concreta y vive en <code>role_permissions</code>. Separarlos permite cambiar qué puede hacer un docente sin
+  tocar el código ni migrar usuarios.</div>
+</div>
+
+<div class="qa">
+  <div class="q">¿Qué falta y cuánto cuesta?</div>
+  <div class="a">Cinco cosas: corregir dos políticas RLS, conectar Supabase Auth a las dos pantallas, crear el
+  middleware, implementar <code>logAudit()</code> y poblar <code>role_permissions</code>. Todo es trabajo de
+  integración sobre cimientos que ya existen; no hay que rediseñar nada.</div>
+</div>
+
+<div class="qa">
+  <div class="q">¿Por qué no usaron NextAuth / JWT propio?</div>
+  <div class="a">Porque Supabase Auth ya emite un JWT que Postgres entiende de forma nativa mediante
+  <code>auth.uid()</code>. Esa integración es la que permite que RLS funcione. Con un sistema de autenticación
+  externo tendríamos que replicar toda la autorización en la capa de aplicación, que es justo lo que queríamos evitar.</div>
+</div>
+</section>
+
+<!-- ============ 12 ============ -->
+<section class="pagebreak">
+<h2><span class="n">12</span>Chuleta de archivos</h2>
+<p class="lead">Ten esta página abierta durante la exposición. Son los archivos que vas a querer mostrar.</p>
+
+<table>
+  <tr><th style="width:52%">Archivo</th><th>Qué enseñar en él</th></tr>
+  <tr><td><span class="path">supabase/migrations/20240516000001_init_schemas.sql</span></td>
+      <td>Las 4 tablas, los índices, el <code>CHECK</code> de roles y las 6 políticas RLS. <b>El archivo principal.</b></td></tr>
+  <tr><td><span class="path">supabase/migrations/20260523000001_sync_auth_profiles.sql</span></td>
+      <td>El trigger <code>handle_new_user()</code> con <code>SECURITY DEFINER</code>.</td></tr>
+  <tr><td><span class="path">supabase/migrations/20260606000001_set_master_admin.sql</span></td>
+      <td>Garantía de administrador maestro mediante <code>CASE</code> en el trigger.</td></tr>
+  <tr><td><span class="path">supabase/migrations/20260605000003_complete_project_schema.sql</span></td>
+      <td>Cómo el resto de módulos reutiliza <code>profiles</code> y el patrón <code>EXISTS … role = 'admin'</code>.</td></tr>
+  <tr><td><span class="path">apps/web/app/(auth)/AUTH_DATABASE.md</span></td>
+      <td>La especificación completa del módulo: flujos, eventos y checklist por sprint.</td></tr>
+  <tr><td><span class="path">apps/web/app/(auth)/login/page.tsx</span></td>
+      <td>La UI y la validación de maqueta que hay que sustituir.</td></tr>
+  <tr><td><span class="path">apps/web/app/(auth)/signup/page.tsx</span></td>
+      <td>Validaciones de formulario y medidor de fuerza de contraseña.</td></tr>
+  <tr><td><span class="path">apps/web/app/(dashboard)/layout.tsx</span></td>
+      <td>Menú filtrado por rol y función de cierre de sesión.</td></tr>
+  <tr><td><span class="path">apps/web/app/(dashboard)/admin/page.tsx</span></td>
+      <td>La verificación de rol en cascada contra Supabase. El código más «real» del módulo.</td></tr>
+  <tr><td><span class="path">packages/sdk/src/client.ts</span></td>
+      <td>Punto único de conexión a Supabase.</td></tr>
+  <tr><td><span class="path">packages/shared/src/validators.ts</span></td>
+      <td>Validadores de email, contraseña y rol, con rechazo de patrones de inyección.</td></tr>
+  <tr><td><span class="path">…/executive-dashboard/live-data.ts</span></td>
+      <td>Consulta de <code>audit_logs</code>, enriquecimiento de eventos y exportación a CSV.</td></tr>
+  <tr><td><span class="path">…/executive-dashboard/executive-dashboard-page.tsx</span></td>
+      <td>Suscripción Realtime al canal <code>executive-audit-stream</code>.</td></tr>
+</table>
+
+<h3>Glosario de bolsillo</h3>
+<table>
+  <tr><th style="width:26%">Término</th><th>Definición en una línea</th></tr>
+  <tr><td><b>JWT</b></td><td>Credencial firmada que el navegador envía en cada petición; no se puede falsificar sin la clave del servidor.</td></tr>
+  <tr><td><b><code>auth.uid()</code></b></td><td>Función de Postgres que extrae el UUID del usuario desde el JWT. La base de cada política.</td></tr>
+  <tr><td><b>RLS</b></td><td>Row Level Security: filtro automático de filas aplicado por Postgres en toda consulta.</td></tr>
+  <tr><td><b>RBAC</b></td><td>Control de acceso basado en roles: se asignan permisos a roles, no a personas.</td></tr>
+  <tr><td><b>Trigger</b></td><td>Función que la base de datos ejecuta sola cuando ocurre un evento (aquí, un <code>INSERT</code> en <code>auth.users</code>).</td></tr>
+  <tr><td><b><code>USING</code> / <code>WITH CHECK</code></b></td><td>Filtra lo que puedes leer / valida lo que puedes escribir.</td></tr>
+  <tr><td><b>bcrypt</b></td><td>Algoritmo de hash lento diseñado para contraseñas; hace inviable la fuerza bruta.</td></tr>
+  <tr><td><b>Inmutabilidad</b></td><td>Propiedad de un registro que no admite modificación ni borrado. Aquí se logra con <code>USING (false)</code>.</td></tr>
+  <tr><td><b>Realtime</b></td><td>Canal de Supabase que empuja cada <code>INSERT</code> al navegador sin recargar.</td></tr>
+  <tr><td><b><code>anon key</code></b></td><td>Clave pública del cliente. No otorga privilegios por sí sola: RLS sigue mandando.</td></tr>
+</table>
+
+<div class="box">
+  <div class="t">Frase de cierre</div>
+  <p>«El módulo de autenticación de SyncUT apuesta por poner la seguridad donde están los datos.
+  El esquema, los roles, las políticas y la bitácora inmutable ya están en producción en la base de datos.
+  Lo que queda por delante es conectar la interfaz a esos cimientos —y esos cimientos, a diferencia
+  de una pantalla, son la parte que no se puede improvisar después.»</p>
+</div>
+</section>
+
+</body>
+</html>
