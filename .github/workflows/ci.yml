@@ -1,20 +1,31 @@
-name: CI Pipeline
+name: CI - Pruebas de Seguridad y Autenticación
 
 on:
+  push:
+    branches: [main, develop, 'feature/**']
   pull_request:
     branches: [develop, main]
+  workflow_dispatch:
 
 jobs:
-  quality-gate:
+  pruebas:
+    name: Pruebas de ${{ matrix.nombre }}
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - nombre: Autenticación
+            archivo: autenticacion
+          - nombre: Seguridad
+            archivo: seguridad
+
     steps:
       - name: Clonar código fuente
         uses: actions/checkout@v4
 
       - name: Setup pnpm
-        uses: pnpm/action-setup@v2
-        with:
-          version: 9.15.9
+        uses: pnpm/action-setup@v4   # toma la versión de "packageManager" (pnpm 9.15.9)
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -25,14 +36,26 @@ jobs:
       - name: Instalar dependencias
         run: pnpm install --frozen-lockfile
 
-      - name: Validación de Estilo de Código (Lint)
-        run: pnpm turbo lint
+      - name: Ejecutar pruebas de ${{ matrix.nombre }}
+        working-directory: packages/shared
+        run: >
+          pnpm exec vitest run tests/${{ matrix.archivo }}.test.ts
+          --reporter=verbose
+          --reporter=junit
+          --outputFile.junit=reports/${{ matrix.archivo }}.xml
 
-      - name: Validación de Tipado (TypeScript)
-        run: pnpm turbo typecheck
+      - name: Publicar resumen de resultados
+        if: always()
+        run: >
+          node scripts/ci-test-summary.mjs
+          packages/shared/reports/${{ matrix.archivo }}.xml
+          "Pruebas de ${{ matrix.nombre }}"
+          >> "$GITHUB_STEP_SUMMARY"
 
-      - name: Ejecución de Tests Unitarios
-        run: pnpm turbo test
-
-      - name: Build del Proyecto
-        run: pnpm turbo build
+      - name: Guardar reporte JUnit
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: reporte-${{ matrix.archivo }}
+          path: packages/shared/reports/${{ matrix.archivo }}.xml
+          if-no-files-found: warn

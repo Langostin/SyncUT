@@ -34,3 +34,6 @@ Thumbs.db
 test-results/
 .vercel
 .env*.local
+
+# Reportes de pruebas
+packages/shared/reports/

@@ -8,9 +8,15 @@
       "default": "./src/validators.ts"
     }
   },
+  "scripts": {
+    "test": "vitest run tests",
+    "test:auth": "vitest run tests/autenticacion.test.ts",
+    "test:security": "vitest run tests/seguridad.test.ts"
+  },
   "devDependencies": {
     "typescript": "^5.3.3",
-    "zod": "^4.4.3"
+    "zod": "^4.4.3",
+    "vitest": "^4.1.6"
   },
   "private": true
 }
