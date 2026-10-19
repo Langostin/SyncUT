@@ -12,6 +12,8 @@
     "dev": "node scripts/generate-git-stats.js && turbo run dev",
     "build": "node scripts/generate-git-stats.js && turbo run build",
     "test": "turbo run test",
+    "test:auth": "pnpm --filter @plataforma/shared test:auth",
+    "test:security": "pnpm --filter @plataforma/shared test:security",
     "lint": "turbo run lint",
     "typecheck": "turbo run typecheck",
     "format": "prettier --write \"**/*.{ts,tsx,json,md}\"",
